@@ -1,6 +1,7 @@
 
 
 use "lib/http.yap"
+use "lib/fs.yap"
 
 seq Server
 {
@@ -33,35 +34,109 @@ fn SendIndexFrontend(srv)
     HT::Set(header, "Content-Length", content_length_string);
     Chunk::Void(content_length_string);
 
-    Http::Send(srv.Server::CONN, header, content, content_length);
+    Http::Send(srv.Server::CONN, 200, header, content, content_length);
     HT::Void(header);
 }
+
+seq Config
+{
+    FILE_CHUNK = 1000000,
+}
+
+fn SendFile(srv, path)
+{
+    put req = srv.Server::REQ;
+    put req_header = req.Http::Request::PARAMS;
+
+    jump stream ~ HT::Has(req_header, "Range");
+    jump direct;
+
+lab stream; SendFileStream(srv, path); jump done;
+lab direct; SendFileDirect(srv, path); jump done;
+
+    lab done;
+}
+
 
 fn SendFileDirect(srv, path)
 {
     put content = FS::Read(path);
     put content_length = Chunk::Size(content) - 1;
 
-    put content_length_string = Str::Copy(Str::FromIntBase(content_length, 10));
+    static 4096 ~ content_length_string;
+    Str::Format(content_length_string, "%d", [content_length]);  
+
 
     put header = HT::Create();
     HT::Set(header, "Content-Length", content_length_string);
 
     Http::Send(
-        srv.Server::CONN, 
-        header, 
-        content, 
+        srv.Server::CONN,
+        200,
+        header,
+        content,
         content_length,
     );
     HT::Void(header);
-    Chunk::Void(content_length_string);
     Chunk::Void(content);
 }
 
 
-fn SendFile(srv, path)
+fn SendFileStream(srv, path)
 {
-    SendFileDirect(srv, path);
+    put req = srv.Server::REQ;
+    put req_header = req.Http::Request::PARAMS;
+
+    put fd = syscall(
+        SYSCALL::OPEN,
+        FS::ConvertPath(path),
+        FS::ENUM::MODE::RDONLY, // read only!
+        0,
+    );
+    jump file_not_found ~ Sys::Error(fd);
+
+    put content_length = FS::Sys::Size(fd);
+
+    put ptr = HT::Get(req_header, "Range");
+    put ptr = Str::Token(ptr, '=');
+    put offset_string = ptr;
+    put ptr = Str::Token(ptr, '-');
+
+    put offset = Str::ToInt(offset_string);
+
+    static Config::FILE_CHUNK ~ bchunk;
+    static Config::FILE_CHUNK ~ qchunk;
+
+    syscall(SYSCALL::LSEEK, fd, offset, FS::Seek::Mode::SEEK_SET);
+    put bytes_read = syscall(
+        SYSCALL::READ,
+        fd,
+        bchunk,
+        Config::FILE_CHUNK,
+    );
+    Mem::FromBytes(qchunk, bchunk, bytes_read);
+
+
+
+    put resp_header = HT::Create();
+
+    static 4096 ~ content_range_string;
+    Str::Format(content_range_string, "bytes %d-%d/*", [
+        offset,
+        (offset + bytes_read) - 1,
+    ]);  
+    HT::Set(resp_header, "Content-Range", content_range_string);
+
+    Http::Send(
+        srv.Server::CONN, 
+        206, // partial content
+        resp_header, 
+        qchunk,
+        bytes_read,
+    );
+    HT::Void(resp_header);
+
+lab file_not_found;
 }
 
 
@@ -89,6 +164,7 @@ fn ProcessCheckDir(srv, path)
 lab go;
     Http::Send(
         srv.Server::CONN, 
+        200,
         header, 
         resp, 
         Str::Len(resp),
@@ -132,6 +208,7 @@ fn ProcessListing(srv, path)
 
     Http::Send(
         srv.Server::CONN, 
+        200,
         header, 
         Dyn::Ptr(listing_str), 
         Dyn::Size(listing_str),
