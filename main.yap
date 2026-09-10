@@ -19,6 +19,14 @@ fn SendIndex(conn)
 
 fn SendDictory(conn, req)
 {
+    put header = HT::Create();
+    HT::Set(header, "Content-Type", "text/json");
+
+    put content = "hello world";
+    put content_length = Str::Len(content);
+
+    Http::Send(conn, header, content, content_length);
+    HT::Void(header);
 }
 
 
