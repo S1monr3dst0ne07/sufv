@@ -8,6 +8,7 @@
 }
 h2
 {
+    width: 100%;
 	text-align: center;
 }
 
@@ -50,6 +51,10 @@ p
 	margin: 0px;
 	font-size: 120%;
 }
+pre
+{
+    text-align: left;
+}
 </style>
     </head>
     <body>
@@ -82,15 +87,6 @@ function get_dir_listing(path) {
     });
 
     return listing;
-}
-
-function download_file(path) {
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", path, false);
-    xhr.setRequestHeader("Action", "Download");
-    xhr.send(null);
-
-    return xhr.responseText;
 }
 
 
@@ -199,20 +195,41 @@ function run_listing_view() {
     build_listing(base_path, view);
 }
 
+function download_file(path) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", path, false);
+    xhr.send(null);
+    return xhr.responseText;
+}
+
 function run_file_view() {
     view = document.getElementById('listing-view');
     view.innerHTML = '';
     title = document.createElement('h2');
+    title.innerText = `content of ${base_path}`;
     view.appendChild(title)
 
-    title.innerText = `content of ${base_path}`;
 
+    var file_path = base_path + '&';
+    var ext = base_path.split('.').at(-1);
+    console.log(ext)
+    switch(ext)
+    {
+        case 'jpg':
+        case 'jpeg':
+        case 'png':
+            content = document.createElement('img');
+            content.src = file_path;
+            content.height = window.innerHeight * 0.8;
+            break;
 
-    content = document.createElement('p');
-    view.appendChild(content)
+        default:
+            content = document.createElement('pre');
+            content.innerText = download_file(file_path);
+            break;
+    }
 
-    var file = download_file(base_path);
-    content.innerText = file;
+    view.appendChild(content);
 }
 
 
