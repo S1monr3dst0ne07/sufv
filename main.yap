@@ -95,7 +95,7 @@ fn SendFileStream(srv, path)
     );
     jump file_not_found ~ Sys::Error(fd);
 
-    put content_length = FS::Sys::Size(fd);
+    put full_content_length = FS::Sys::Size(fd);
 
     put ptr = HT::Get(req_header, "Range");
     put ptr = Str::Token(ptr, '=');
@@ -120,10 +120,15 @@ fn SendFileStream(srv, path)
 
     put resp_header = HT::Create();
 
+    static 4096 ~ content_length_string;
+    Str::Format(content_length_string, "%d", [bytes_read]);  
+    HT::Set(resp_header, "Content-Length", content_length_string);
+
     static 4096 ~ content_range_string;
-    Str::Format(content_range_string, "bytes %d-%d/*", [
+    Str::Format(content_range_string, "bytes %d-%d/%d", [
         offset,
         (offset + bytes_read) - 1,
+        full_content_length,
     ]);  
     HT::Set(resp_header, "Content-Range", content_range_string);
 
