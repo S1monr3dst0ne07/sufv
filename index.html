@@ -231,6 +231,12 @@ function run_file_view() {
             content.height = window.innerHeight * 0.8;
             break;
 
+        case 'mp4':
+            content = document.createElement('video');
+            content.controls = true;
+            content.src = file_path;
+            break;
+
         default:
             content = document.createElement('pre');
             content.innerText = download_file(file_path);
