@@ -169,6 +169,15 @@ function build_listing(path, target, level=0) {
     console.log("path", path);
     listing = get_dir_listing(path) 
 
+    listing.sort((a, b) => {
+        if (a.type == 'dir' && b.type != 'dir') return  1;
+        if (a.type != 'dir' && b.type == 'dir') return -1;
+
+        n1 = a.name;
+        n2 = b.name;
+        return n1.localeCompare(n2);
+    });
+
     listing.forEach(dirent => {
         subpath = path + dirent.name;
 
@@ -212,7 +221,6 @@ function run_file_view() {
 
     var file_path = base_path + '&';
     var ext = base_path.split('.').at(-1);
-    console.log(ext)
     switch(ext)
     {
         case 'jpg':
