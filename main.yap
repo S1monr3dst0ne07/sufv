@@ -2,7 +2,7 @@
 
 use "lib/http.yap"
 
-fn SendIndex(conn)
+fn SendIndexFrontend(conn)
 {
     put header = HT::Create();
 
@@ -17,7 +17,7 @@ fn SendIndex(conn)
     HT::Void(header);
 }
 
-fn SendDictory(conn, req)
+fn DEAD(conn, req)
 {
     put header = HT::Create();
     HT::Set(header, "Content-Type", "text/json");
@@ -27,6 +27,32 @@ fn SendDictory(conn, req)
 
     Http::Send(conn, header, content, content_length);
     HT::Void(header);
+}
+
+fn ProcessListing(conn, path)
+{
+    print("listing on `%s`\n", [path]);
+}
+
+fn ProcessRequest(conn, req)
+{
+    put table = req.Http::Request::PARAMS;
+    put req_type_field_name = "Action";
+
+    jump bad_req ~ Bool::Not(HT::Has(table, req_type_field_name));
+    put req_type = HT::Get(table, req_type_field_name);
+    put path = Http::Unescape(req.Http::Request::PATH);
+
+    jump skip_listing  ~ Str::Diff(req_type, "Listing");  ProcessListing(conn, path); lab skip_listing;
+    //jump skip_download ~ Str::Diff(req_type, "Download"); ProcessDownload(conn, path); lab skip_listing;
+
+    Chunk::Void(path);
+    jump done;
+
+lab bad_req;
+    print("bad request\n");
+
+lab done;
 }
 
 
@@ -56,11 +82,11 @@ fn serve(server)
 
 
     lab route_get;
-        SendIndex(conn);
+        SendIndexFrontend(conn);
         jump continue;
 
     lab route_post;
-        SendDictory(conn, req);
+        ProcessRequest(conn, req);
         jump continue;
 }
 
