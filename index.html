@@ -6,7 +6,7 @@
 {
 	font-family: consolas;
 }
-h1
+h2
 {
 	text-align: center;
 }
@@ -18,7 +18,7 @@ body
 
 #listing-view
 {
-	display: hidden;
+	display: inline-block;
 	border: 1px solid black;
 	border-radius: 5px;
 	padding: 10px;
@@ -53,8 +53,7 @@ p
 </style>
     </head>
     <body>
-        <div id='listing-view', style='display: none'> 
-        </div>
+        <div id='listing-view'></div>
     </body>
 
     <script>
@@ -83,6 +82,30 @@ function get_dir_listing(path) {
     });
 
     return listing;
+}
+
+function download_file(path) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", path, false);
+    xhr.setRequestHeader("Action", "Download");
+    xhr.send(null);
+
+    return xhr.responseText;
+}
+
+
+function get_dir_check(path) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", path, false);
+    xhr.setRequestHeader("Action", "CheckDir");
+    xhr.send(null);
+
+    var listing = [];
+    switch (xhr.responseText) {
+        case "yes": return true;
+        case "no":  return false;
+        default:    return false;
+    }
 }
 
 
@@ -128,32 +151,75 @@ function build_dir_entry(path, name_str, level) {
     return container;
 }
 
+
+function build_file_entry(path, name_str, level) {
+    var header = document.createElement("div");
+
+    header.classList.add('listing-entry');
+
+    var name = document.createElement("p");
+    name.innerText = name_str;
+    header.appendChild(name);
+
+    header.onclick = () => {
+        window.location.pathname = path;
+    };
+
+    return header;
+}
+
+
 function build_listing(path, target, level=0) {
     console.log("path", path);
     listing = get_dir_listing(path) 
 
     listing.forEach(dirent => {
-        subpath = `${path}${dirent.name}/`
+        subpath = path + dirent.name;
 
         switch(dirent.type) {
-            case 'dir': node = build_dir_entry(subpath, dirent.name, level); break;
+            case 'dir':  node = build_dir_entry (subpath + '/', dirent.name, level); break;
+            case 'file': node = build_file_entry(subpath      , dirent.name, level); break;
             default: return;
         }
 
         node.style.paddingLeft = `${level*20}px`;
         target.appendChild(node);
     });
-
 }
+
+var base_path = window.location.pathname;
 
 function run_listing_view() {
     view = document.getElementById('listing-view');
     view.innerHTML = '';
-    view.style.display = 'inline-block';
-    build_listing(window.location.pathname, view);
+    title = document.createElement('h2');
+    view.appendChild(title)
+
+    title.innerText = `listing of ${base_path}`;
+    build_listing(base_path, view);
 }
 
-run_listing_view();
+function run_file_view() {
+    view = document.getElementById('listing-view');
+    view.innerHTML = '';
+    title = document.createElement('h2');
+    view.appendChild(title)
+
+    title.innerText = `content of ${base_path}`;
+
+
+    content = document.createElement('p');
+    view.appendChild(content)
+
+    var file = download_file(base_path);
+    content.innerText = file;
+}
+
+
+if (get_dir_check(base_path))
+    run_listing_view();
+else
+    run_file_view();
 
 
     </script>
