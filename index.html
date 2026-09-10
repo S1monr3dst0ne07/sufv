@@ -1,11 +1,61 @@
 <html>
     <head>
         <title>File View</title>
+<style>
+*
+{
+	font-family: consolas;
+}
+h1
+{
+	text-align: center;
+}
+
+body
+{
+	text-align: center;
+}
+
+#listing-view
+{
+	display: hidden;
+	border: 1px solid black;
+	border-radius: 5px;
+	padding: 10px;
+}
+
+.listing-entry svg
+{
+    height: 1.5em;
+    width: auto;
+    flex: 0 0 auto;
+}
+.listing-entry p 
+{
+    margin: 0;
+}
+.listing-entry
+{
+    display: flex;
+}
+.listing-entry:hover
+{
+    align-items: left;
+    text-decoration: underline;
+    background: lightgray;
+}
+p
+{
+	text-align: left;
+	margin: 0px;
+	font-size: 120%;
+}
+</style>
     </head>
     <body>
-        <h1>whazzup maine, how you dooin?</h1>
+        <div id='listing-view', style='display: none'> 
+        </div>
     </body>
-
 
     <script>
 
@@ -15,13 +65,96 @@ function get_dir_listing(path) {
     xhr.setRequestHeader("Action", "Listing");
     xhr.send(null);
 
-    return xhr.responseText;
+    var listing = [];
+    xhr.responseText.split('\n').forEach(line => {
+        if (line == '') return;
+
+        var comps = line.split(',');
+        var type = comps.shift();
+        var name = comps.join(',');
+
+        if (['.', '..'].includes(name))
+            return;
+
+        listing.push({
+            'type': type,
+            'name': name,
+        });
+    });
+
+    return listing;
 }
 
-var source_path = window.location.pathname;
-var listing = get_dir_listing(source_path);
 
-console.log(listing);
+function build_dir_entry(path, name_str, level) {
+    var container = document.createElement("div");
+    var body = document.createElement('div');
+    var header = document.createElement("div");
+
+    container.appendChild(header);
+    container.appendChild(body);
+
+    header.classList.add('listing-entry');
+    var icon = document.createElement("div");
+    var name = document.createElement("p");
+    name.innerText = name_str;
+    header.appendChild(icon);
+    header.appendChild(name);
+
+    icon.innerHTML = `
+<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M9 6L15 12L9 18" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+    `;
+
+    var open_state = false;
+    header.onclick = () => {
+        open_state = !open_state;
+        var icon_svg = icon.firstElementChild
+
+        if (open_state) {
+            icon_svg.setAttribute("transform", "rotate(90)");
+            icon_svg.firstElementChild.setAttribute('stroke', '#000');
+
+            build_listing(path, body, level+1)
+        } else {
+            icon_svg.setAttribute("transform", "rotate(0)");
+            icon_svg.firstElementChild.setAttribute('stroke', '#aaa');
+
+            body.innerHTML = '';
+        }
+    };
+
+    return container;
+}
+
+function build_listing(path, target, level=0) {
+    console.log("path", path);
+    listing = get_dir_listing(path) 
+
+    listing.forEach(dirent => {
+        subpath = `${path}${dirent.name}/`
+
+        switch(dirent.type) {
+            case 'dir': node = build_dir_entry(subpath, dirent.name, level); break;
+            default: return;
+        }
+
+        node.style.paddingLeft = `${level*20}px`;
+        target.appendChild(node);
+    });
+
+}
+
+function run_listing_view() {
+    view = document.getElementById('listing-view');
+    view.innerHTML = '';
+    view.style.display = 'inline-block';
+    build_listing(window.location.pathname, view);
+}
+
+run_listing_view();
+
 
     </script>
 </html>
