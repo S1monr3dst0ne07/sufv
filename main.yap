@@ -36,6 +36,7 @@ fn SendIndexFrontend(srv)
 
     Http::Send(srv.Server::CONN, 200, header, content, content_length);
     HT::Void(header);
+    Chunk::Void(content);
 }
 
 seq Config
@@ -281,11 +282,13 @@ fn serve(srv)
 
         Http::VoidReq(srv.Server::REQ);
         Net::Close(srv.Server::CONN);
+        dump_heap("core");
     jump loop;
 
     lab route_get;
         put last_char_ptr = path : (Str::Len(path) - 1);
         jump send_file ~ (last_char_ptr.0) == '&';
+
         SendIndexFrontend(srv);
         jump continue;
 
