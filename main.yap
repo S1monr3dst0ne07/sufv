@@ -63,6 +63,7 @@ fn ProcessListing(srv, path)
 {
     put listing_str = Dyn::Create();
     put listing_obj = FS::Dir(path);
+    jump not_a_dir ~ listing_obj == Mem::NULL;
 
     static (1 << 16) ~ line;
     
@@ -101,6 +102,8 @@ fn ProcessListing(srv, path)
     HT::Void(header);
 
     Dyn::Delete(listing_str);
+
+lab not_a_dir;
 }
 
 fn ProcessRequest(srv)
