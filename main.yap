@@ -174,7 +174,9 @@ fn main()
     put srv = Chunk::New(Server);
     put srv.Server::SOCKET = socket;
 
-    put srv.Server::PATH_PREFIX = "./root";
+    //put srv.Server::PATH_PREFIX = "./root";
+    put srv.Server::PATH_PREFIX = FS::Read("prefix.txt");
+    print("path prefix: `%s`\n", [srv.Server::PATH_PREFIX]);
 
     serve(srv);
 }

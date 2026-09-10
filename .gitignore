@@ -2,3 +2,4 @@ build
 build.asm
 compiler
 lib/*
+prefix.txt
