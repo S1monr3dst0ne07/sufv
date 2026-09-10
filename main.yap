@@ -37,17 +37,34 @@ fn SendIndexFrontend(srv)
     HT::Void(header);
 }
 
-fn DEAD(conn, req)
+fn SendFileDirect(srv, path)
 {
+    put content = FS::Read(path);
+    put content_length = Chunk::Size(content) - 1;
+
+    put content_length_string = Str::Copy(Str::FromIntBase(content_length, 10));
+
     put header = HT::Create();
-    HT::Set(header, "Content-Type", "text/json");
+    HT::Set(header, "Content-Length", content_length_string);
 
-    put content = "hello world";
-    put content_length = Str::Len(content);
-
-    Http::Send(conn, header, content, content_length);
+    Http::Send(
+        srv.Server::CONN, 
+        header, 
+        content, 
+        content_length,
+    );
     HT::Void(header);
+    Chunk::Void(content_length_string);
+    Chunk::Void(content);
 }
+
+
+fn SendFile(srv, path)
+{
+    SendFileDirect(srv, path);
+}
+
+
 
 fn DirTypeToStr(type)
 {
@@ -77,27 +94,6 @@ lab go;
         Str::Len(resp),
     );
     HT::Void(header);
-}
-
-fn ProcessDownload(srv, path)
-{
-    put content = FS::Read(path);
-    put content_length = Chunk::Size(content) - 1;
-
-    put content_length_string = Str::Copy(Str::FromIntBase(content_length, 10));
-
-    put header = HT::Create();
-    HT::Set(header, "Content-Type", "text/plain");
-    HT::Set(header, "Content-Length", content_length_string);
-
-    Http::Send(
-        srv.Server::CONN, 
-        header, 
-        content, 
-        content_length,
-    );
-    HT::Void(header);
-    Chunk::Void(content_length_string);
 }
 
 fn ProcessListing(srv, path)
@@ -147,7 +143,7 @@ fn ProcessListing(srv, path)
 lab not_a_dir;
 }
 
-fn ProcessRequest(srv)
+fn ProcessRequest(srv, path)
 {
     put req = srv.Server::REQ;
 
@@ -156,13 +152,9 @@ fn ProcessRequest(srv)
 
     jump bad_req ~ Bool::Not(HT::Has(table, req_type_field_name));
     put req_type = HT::Get(table, req_type_field_name);
-    put path_suffix = Http::Unescape(req.Http::Request::PATH);
-    put path = RenderPath(srv, path_suffix);
-    Chunk::Void(path_suffix);
 
     jump skip_listing    ~ Str::Diff(req_type, "Listing");  ProcessListing(srv, path);  lab skip_listing;
     jump skip_dir_check  ~ Str::Diff(req_type, "CheckDir"); ProcessCheckDir(srv, path); lab skip_dir_check;
-    jump skip_download   ~ Str::Diff(req_type, "Download"); ProcessDownload(srv, path); lab skip_download;
 
     jump done;
 
@@ -191,9 +183,14 @@ fn serve(srv)
 {
     lab loop;
         put srv.Server::CONN = Net::Server::Accept(srv.Server::SOCKET);
-        put srv.Server::REQ  = Http::Recv(srv.Server::CONN);
+        put req = Http::Recv(srv.Server::CONN);
+        put srv.Server::REQ = req;
 
-        put method = (srv.Server::REQ).Http::Request::METHOD;
+        put path_suffix = Http::Unescape(req.Http::Request::PATH);
+        put path = RenderPath(srv, path_suffix);
+        Chunk::Void(path_suffix);
+
+        put method = req.Http::Request::METHOD;
         jump route_get  ~ method == Http::MethodKind::GET;
         jump route_post ~ method == Http::MethodKind::POST;
     lab continue;
@@ -202,13 +199,19 @@ fn serve(srv)
         Net::Close(srv.Server::CONN);
     jump loop;
 
-
     lab route_get;
+        put last_char_ptr = path : (Str::Len(path) - 1);
+        jump send_file ~ (last_char_ptr.0) == '&';
         SendIndexFrontend(srv);
         jump continue;
 
+    lab send_file;
+        put last_char_ptr.0 = '\0';
+        SendFile(srv, path);
+        jump continue;
+
     lab route_post;
-        ProcessRequest(srv);
+        ProcessRequest(srv, path);
         jump continue;
 }
 
