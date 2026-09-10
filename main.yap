@@ -59,6 +59,26 @@ fn DirTypeToStr(type)
     lab file; return "file";
 }
 
+fn ProcessCheckDir(srv, path)
+{
+    put header = HT::Create();
+    HT::Set(header, "Content-Type", "text/plain");
+
+    jump yes ~ FS::IsDir(path); jump no;
+
+    lab yes; put resp = "yes"; jump go;
+    lab no;  put resp = "no"; jump go;
+
+lab go;
+    Http::Send(
+        srv.Server::CONN, 
+        header, 
+        resp, 
+        Str::Len(resp),
+    );
+    HT::Void(header);
+}
+
 fn ProcessListing(srv, path)
 {
     put listing_str = Dyn::Create();
@@ -119,7 +139,8 @@ fn ProcessRequest(srv)
     put path = RenderPath(srv, path_suffix);
     Chunk::Void(path_suffix);
 
-    jump skip_listing  ~ Str::Diff(req_type, "Listing");  ProcessListing(srv, path); lab skip_listing;
+    jump skip_listing    ~ Str::Diff(req_type, "Listing");  ProcessListing(srv, path); lab skip_listing;
+    jump skip_dir_check  ~ Str::Diff(req_type, "CheckDir"); ProcessCheckDir(srv, path); lab skip_dir_check;
     //jump skip_download ~ Str::Diff(req_type, "Download"); ProcessDownload(srv, path); lab skip_listing;
 
     jump done;
