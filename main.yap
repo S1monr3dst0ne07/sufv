@@ -88,6 +88,7 @@ fn SendFileDirect(srv, path)
             Config::FILE_CHUNK,
         );
 
+        jump done ~ Sys::Error(bytes_read);
         jump done ~ bytes_read == 0;
 
         Net::WriteBytes(
