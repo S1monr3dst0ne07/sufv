@@ -32,6 +32,7 @@ h2
 .listing-entry p 
 {
     margin: 0;
+    user-select: none;
 }
 .listing-entry
 {
@@ -39,9 +40,12 @@ h2
 }
 .listing-entry:hover
 {
-    align-items: left;
-    text-decoration: underline;
     background: lightgray;
+}
+.listing-entry p:hover
+{
+    text-decoration: underline;
+    cursor: pointer;
 }
 p
 {
@@ -116,9 +120,10 @@ function build_dir_entry(path, name_str, level) {
     header.classList.add('listing-entry');
     var icon = document.createElement("div");
     var name = document.createElement("p");
-    name.innerText = name_str;
     header.appendChild(icon);
     header.appendChild(name);
+
+    name.innerText = name_str;
 
     icon.innerHTML = `
 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -143,6 +148,10 @@ function build_dir_entry(path, name_str, level) {
             body.innerHTML = '';
         }
     };
+
+    name.onclick = () => {
+        window.location.pathname = path;
+    }
 
     return container;
 }
