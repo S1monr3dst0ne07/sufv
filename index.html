@@ -216,6 +216,30 @@ function build_listing(path, target, level=0) {
 
 var base_path = window.location.pathname;
 
+
+function add_nav_buttons(target) {
+    container = document.createElement('div');
+
+    path_parts = base_path.split('/').filter(x => x != '');
+    path_parts.pop();
+    up_path = '/' + path_parts.join('/');
+
+    up_btn = document.createElement('a');
+    up_btn.href = up_path;
+    up_btn.innerHTML = '<h3 style="margin: .4em">up</h3>';
+    container.appendChild(up_btn);
+
+    home_btn = document.createElement('a');
+    home_btn.href = '/';
+    home_btn.innerHTML = '<h3 style="margin: .4em">home</h3>';
+    container.appendChild(home_btn);
+
+    container.style = "text-align: center; display: flex";
+
+    target.appendChild(container);
+}
+
+
 function run_listing_view() {
     view = document.getElementById('listing-view');
     view.innerHTML = '';
@@ -223,6 +247,7 @@ function run_listing_view() {
     view.appendChild(title)
 
     title.innerText = `listing of ${base_path}`;
+    add_nav_buttons(view);
     build_listing(base_path, view);
 }
 
@@ -243,6 +268,7 @@ function run_file_view() {
     title = document.createElement('h2');
     title.innerText = `content of ${decodeURI(base_path)}`;
     view.appendChild(title)
+    add_nav_buttons(view);
 
 
     var file_path = base_path + '&';
