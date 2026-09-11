@@ -11,6 +11,13 @@ h2
     width: 100%;
     text-align: center;
 }
+iframe
+{
+    width:  100%;
+    height: 100%;
+    resize: both;
+    overflow: auto;
+}
 .listing-container-file
 {
     text-align: center;
@@ -263,6 +270,67 @@ function run_file_view() {
             content = document.createElement('pre');
             content.innerText = download_file(file_path);
             break;
+
+        case 'html':
+            const new_doc = download_file(file_path);
+            const new_dom = (new DOMParser()).parseFromString(new_doc, "text/html");
+
+            const link_patcher = () => {
+                var link_patch = (doc) => {
+                    console.log("patching links!");
+                    for (const attr of ['href', 'src', 'action', 'formaction', 'poster', 'cite'])
+                    {
+                        doc.querySelectorAll(`[${attr}]`).forEach(el => {
+                            const value = el.getAttribute(attr);
+                            if (!value) return;
+                            const url = new URL(value, doc.baseURI);
+                            if (url.protocol !== location.protocol) return;
+                            if (url.origin   !== location.origin  ) return;
+                            if (value.endsWith('/')) return;
+                            if (value.endsWith('&')) return;
+
+                            el.setAttribute(attr, value + '&');
+                        });
+                    };
+                    doc.querySelectorAll('[srcset]').forEach(el => {
+                        const value = el.getAttribute('srcset');
+                        if (!value) return;
+
+                        el.setAttribute('srcset', (() => {
+                            const parts = value.trim().split(' ');
+                            if (!parts[0]) return value;
+                            const url = parts[0];
+
+                            if (url.endsWith('/')) return;
+                            if (url.endsWith('&')) return;
+
+                            parts[0] = url + '&';
+                            return parts.join(' ');
+                        })());
+
+                    });
+                };
+
+                link_patch(document);
+                document.querySelectorAll('iframe').forEach((iframe) => {
+                    iframe.addEventListener('load', () => {
+                        link_patch(iframe.contentDocument);
+                    });
+                });
+            };
+
+            document.replaceChild(
+              document.importNode(new_dom.documentElement, true),
+              document.documentElement
+            );
+
+            
+            const link_patcher_script = document.createElement('script');
+            link_patcher_script.textContent = `(${link_patcher.toString()})();`;
+            document.body.appendChild(link_patcher_script);
+
+            return;
+
 
         default:
             content = document.createElement('p');
