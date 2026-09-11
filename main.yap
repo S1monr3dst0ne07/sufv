@@ -191,9 +191,11 @@ fn ProcessListing(srv, path)
         jump done ~ i == Dyn::Size(listing_obj);
         put dirent = Dyn::Ptr(listing_obj).i;
 
+        put subdir_name = dirent.FS::Dir::Ent::NAME;
+
         Str::Format(line, "%s,%s\n", [
             DirTypeToStr(dirent.FS::Dir::Ent::TYPE),
-            dirent.FS::Dir::Ent::NAME,
+            subdir_name,
         ]);
 
         put tmp = Dyn::CreatePopulate(
@@ -203,11 +205,14 @@ fn ProcessListing(srv, path)
         );
         Dyn::Merge(listing_str, tmp);
         Chunk::Void(tmp);
+
+        Chunk::Void(dirent);
+        Chunk::Void(subdir_name);
         
         put i = i + 1;
         jump loop;
     lab done;
-
+    Dyn::Delete(listing_obj);
 
     put header = HT::Create();
     HT::Set(header, "Content-Type", "text/plain");
@@ -220,7 +225,6 @@ fn ProcessListing(srv, path)
         Dyn::Size(listing_str),
     );
     HT::Void(header);
-
     Dyn::Delete(listing_str);
 
 lab not_a_dir;
