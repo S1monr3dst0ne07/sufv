@@ -61,25 +61,42 @@ lab direct; SendFileDirect(srv, path); jump done;
 
 fn SendFileDirect(srv, path)
 {
-    put content = FS::Read(path);
-    put content_length = Chunk::Size(content) - 1;
+    put content_length = FS::Size(path);
 
     static 4096 ~ content_length_string;
     Str::Format(content_length_string, "%d", [content_length]);  
 
-
     put header = HT::Create();
     HT::Set(header, "Content-Length", content_length_string);
 
-    Http::Send(
+    Http::SendHeader(
         srv.Server::CONN,
         200,
         header,
-        content,
-        content_length,
     );
     HT::Void(header);
-    Chunk::Void(content);
+
+    static (Config::FILE_CHUNK >> 3) ~ buffer;
+    
+    put fd = FS::Sys::Open(path, FS::ENUM::MODE::RDONLY);
+    
+    lab loop;
+        put bytes_read = syscall(
+            SYSCALL::READ, 
+            fd,
+            buffer,
+            Config::FILE_CHUNK,
+        );
+
+        jump done ~ bytes_read == 0;
+
+        Net::WriteBytes(
+            srv.Server::CONN,
+            buffer,
+            bytes_read,
+        );
+        jump loop;
+    lab done;
 }
 
 
