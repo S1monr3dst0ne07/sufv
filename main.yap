@@ -167,6 +167,7 @@ lab file_not_found;
 fn DirTypeToStr(type)
 {
     jump dir  ~ type == FS::Dir::Type::DIR;
+    jump dir  ~ type == FS::Dir::Type::LINK;
     jump file ~ type == FS::Dir::Type::FILE;
     return "unknown";
 
