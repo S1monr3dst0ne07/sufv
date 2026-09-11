@@ -127,26 +127,32 @@ function build_dir_entry(path, name_str, level) {
 
     icon.innerHTML = `
 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M9 6L15 12L9 18" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M9 6L15 12L9 18" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
     `;
 
+    var icon_svg = icon.firstElementChild;
     var open_state = false;
+    function update_icon_color(state) {
+        color = !state ? "#aaa" : "#333";
+        icon_svg.firstElementChild.setAttribute('stroke', color);
+    }
+
+    icon.onmouseover = () => update_icon_color(!open_state);
+    icon.onmouseout  = () => update_icon_color( open_state);
+
     header.onclick = () => {
         open_state = !open_state;
-        var icon_svg = icon.firstElementChild
 
         if (open_state) {
             icon_svg.setAttribute("transform", "rotate(90)");
-            icon_svg.firstElementChild.setAttribute('stroke', '#000');
-
             build_listing(path, body, level+1)
         } else {
             icon_svg.setAttribute("transform", "rotate(0)");
-            icon_svg.firstElementChild.setAttribute('stroke', '#aaa');
-
             body.innerHTML = '';
         }
+
+        update_icon_color(open_state);
     };
 
     name.onclick = () => {
