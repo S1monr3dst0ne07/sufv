@@ -286,7 +286,6 @@ fn serve(srv)
 
         Http::VoidReq(srv.Server::REQ);
         Net::Close(srv.Server::CONN);
-        dump_heap("core");
     jump loop;
 
     lab route_get;
