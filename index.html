@@ -9,14 +9,12 @@
 h2
 {
     width: 100%;
-	text-align: center;
+    text-align: center;
 }
-
-body
+.listing-container-file
 {
-	text-align: center;
+    text-align: center;
 }
-
 #listing-view
 {
 	display: inline-block;
@@ -58,7 +56,9 @@ pre
 </style>
     </head>
     <body>
-        <div id='listing-view'></div>
+        <div id='listing-container'>
+            <div id='listing-view'></div>
+        </div>
     </body>
 
     <script>
@@ -211,6 +211,10 @@ function download_file(path) {
     return xhr.responseText;
 }
 
+function get_filename_by_path(path) {
+    return path.split('/').at(-1);
+}
+
 function run_file_view() {
     view = document.getElementById('listing-view');
     view.innerHTML = '';
@@ -220,7 +224,7 @@ function run_file_view() {
 
 
     var file_path = base_path + '&';
-    var ext = base_path.split('.').at(-1);
+    var ext = base_path.includes('.') ? base_path.split('.').at(-1) : '';
     switch(ext.toLowerCase())
     {
         case 'jpg':
@@ -236,22 +240,50 @@ function run_file_view() {
             content = document.createElement('video');
             content.controls = true;
             content.src = file_path;
+            content.height = window.innerHeight * 0.8;
+            break;
+        
+        case 'txt':
+        case '':
+            content = document.createElement('pre');
+            content.innerText = download_file(file_path);
             break;
 
         default:
-            content = document.createElement('pre');
-            content.innerText = download_file(file_path);
+            content = document.createElement('p');
+            content.innerText = 'content cannot be displayed in browser :(';
+
+            content.appendChild(document.createElement('br'));
+
+            var filename = get_filename_by_path(base_path)
+            download_btn = document.createElement('a');
+            download_btn.setAttribute('href', file_path);
+            download_btn.setAttribute('download', filename);
+            download_btn.innerText = `download ${filename}`;
+
+            content.appendChild(download_btn);
+
             break;
     }
 
     view.appendChild(content);
 }
 
-
 if (get_dir_check(base_path))
+{
     run_listing_view();
+
+    // fix listing-view alignment
+    listing_view = document.getElementById('listing-view');
+    var rect = listing_view.getBoundingClientRect();
+    listing_view.style.marginLeft = (window.innerWidth - rect.width) / 2;
+}
 else
+{
     run_file_view();
+    listing_view = document.getElementById('listing-container');
+    listing_view.classList.add('listing-container-file')
+}
 
 
     </script>
