@@ -221,7 +221,7 @@ function run_file_view() {
 
     var file_path = base_path + '&';
     var ext = base_path.split('.').at(-1);
-    switch(ext)
+    switch(ext.toLowerCase())
     {
         case 'jpg':
         case 'jpeg':
@@ -232,6 +232,7 @@ function run_file_view() {
             break;
 
         case 'mp4':
+        case 'mkv':
             content = document.createElement('video');
             content.controls = true;
             content.src = file_path;
