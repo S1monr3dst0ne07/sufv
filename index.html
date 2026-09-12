@@ -200,6 +200,8 @@ function build_listing(path, target, level=0) {
         return n1.localeCompare(n2);
     });
 
+    if (!path.endsWith('/')) path += '/';
+
     listing.forEach(dirent => {
         subpath = path + dirent.name;
 
@@ -215,6 +217,7 @@ function build_listing(path, target, level=0) {
 }
 
 var base_path = window.location.pathname;
+var string_path = decodeURI(base_path);
 
 
 function add_nav_buttons(target) {
@@ -222,7 +225,7 @@ function add_nav_buttons(target) {
 
     path_parts = base_path.split('/').filter(x => x != '');
     path_parts.pop();
-    up_path = '/' + path_parts.join('/');
+    up_path = '/' + path_parts.join('/') + '/';
 
     up_btn = document.createElement('a');
     up_btn.href = up_path;
@@ -246,7 +249,7 @@ function run_listing_view() {
     title = document.createElement('h2');
     view.appendChild(title)
 
-    title.innerText = `listing of ${base_path}`;
+    title.innerText = `listing of ${string_path}`;
     add_nav_buttons(view);
     build_listing(base_path, view);
 }
@@ -258,15 +261,12 @@ function download_file(path) {
     return xhr.responseText;
 }
 
-function get_filename_by_path(path) {
-    return path.split('/').at(-1);
-}
 
 function run_file_view() {
     view = document.getElementById('listing-view');
     view.innerHTML = '';
     title = document.createElement('h2');
-    title.innerText = `content of ${decodeURI(base_path)}`;
+    title.innerText = `content of ${string_path}`;
     view.appendChild(title)
     add_nav_buttons(view);
 
@@ -364,11 +364,11 @@ function run_file_view() {
 
             content.appendChild(document.createElement('br'));
 
-            var filename = get_filename_by_path(base_path)
+            var filename = base_path.split('/').at(-1);
             download_btn = document.createElement('a');
             download_btn.setAttribute('href', file_path);
             download_btn.setAttribute('download', filename);
-            download_btn.innerText = `download ${filename}`;
+            download_btn.innerText = `download ${decodeURI(filename)}`;
 
             content.appendChild(download_btn);
 
