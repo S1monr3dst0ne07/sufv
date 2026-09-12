@@ -64,6 +64,18 @@ pre
 {
     text-align: left;
 }
+.image-container
+{
+    display: flex;
+    align-items: stretch;
+    gap: 1%;
+    justify-content: center;
+}
+.image-container button
+{
+    width: 3%
+    text-align: center;
+}
 </style>
     </head>
     <body>
@@ -95,6 +107,15 @@ function get_dir_listing(path) {
             'type': type,
             'name': name,
         });
+    });
+
+    listing.sort((a, b) => {
+        if (a.type == 'dir' && b.type != 'dir') return  1;
+        if (a.type != 'dir' && b.type == 'dir') return -1;
+
+        n1 = a.name;
+        n2 = b.name;
+        return n1.localeCompare(n2);
     });
 
     return listing;
@@ -191,15 +212,6 @@ function build_listing(path, target, level=0) {
     console.log("path", path);
     listing = get_dir_listing(path) 
 
-    listing.sort((a, b) => {
-        if (a.type == 'dir' && b.type != 'dir') return  1;
-        if (a.type != 'dir' && b.type == 'dir') return -1;
-
-        n1 = a.name;
-        n2 = b.name;
-        return n1.localeCompare(n2);
-    });
-
     if (!path.endsWith('/')) path += '/';
 
     listing.forEach(dirent => {
@@ -218,14 +230,12 @@ function build_listing(path, target, level=0) {
 
 var base_path = window.location.pathname;
 var string_path = decodeURI(base_path);
-
+var path_parts = base_path.split('/').filter(x => x != '');
+var file_name = path_parts.pop();
+var up_path = '/' + path_parts.join('/') + (path_parts.length ? '/' : '');
 
 function add_nav_buttons(target) {
     container = document.createElement('div');
-
-    path_parts = base_path.split('/').filter(x => x != '');
-    path_parts.pop();
-    up_path = '/' + path_parts.join('/') + '/';
 
     up_btn = document.createElement('a');
     up_btn.href = up_path;
@@ -276,9 +286,38 @@ function run_file_view() {
         case 'jpg':
         case 'jpeg':
         case 'png':
-            content = document.createElement('img');
-            content.src = file_path;
-            content.height = window.innerHeight * 0.8;
+            var dir = get_dir_listing(up_path);
+            var index = dir.findIndex(x => x.name === decodeURI(file_name));
+
+            var left_btn  = document.createElement('button');
+            var right_btn = document.createElement('button');
+
+            const style = "writing-mode: vertical-lr; text-orientation: upright;";
+            left_btn.innerHTML  = `<p style="${style}">previous</p>`;
+            right_btn.innerHTML = `<p style="${style}">next</p>`;
+
+            left_btn .onclick = () => { window.location.pathname = up_path + dir[index-1].name };
+            right_btn.onclick = () => { window.location.pathname = up_path + dir[index+1].name };
+
+            if (index == 0 || index == -1) 
+                left_btn .style.visibility = 'hidden';
+
+            if (index == (dir.length-1) || index == -1) 
+                right_btn.style.visibility = 'hidden';
+
+            image = document.createElement('img');
+            image.src = file_path;
+            image.height = window.innerHeight * 0.8;
+            image.onclick = () => {
+                image.requestFullscreen();
+            };
+            
+            content = document.createElement('div');
+            content.classList.add('image-container');
+            content.appendChild(left_btn);
+            content.appendChild(image);
+            content.appendChild(right_btn);
+
             break;
 
         case 'mp4':
@@ -362,11 +401,10 @@ function run_file_view() {
 
             content.appendChild(document.createElement('br'));
 
-            var filename = base_path.split('/').at(-1);
             download_btn = document.createElement('a');
             download_btn.setAttribute('href', file_path);
-            download_btn.setAttribute('download', filename);
-            download_btn.innerText = `download ${decodeURI(filename)}`;
+            download_btn.setAttribute('download', file_name);
+            download_btn.innerText = `download ${decodeURI(file_name)}`;
 
             content.appendChild(download_btn);
 
