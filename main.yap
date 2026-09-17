@@ -249,6 +249,12 @@ fn ProcessListing(srv, path)
 lab not_a_dir;
 }
 
+fn GlobalFlagNeedDumpCore()
+{
+    static 1 ~ flag;
+    return flag;
+}
+
 fn ProcessRequest(srv, path)
 {
     put req = srv.Server::REQ;
@@ -261,7 +267,10 @@ fn ProcessRequest(srv, path)
 
     jump skip_listing    ~ Str::Diff(req_type, "Listing");  ProcessListing(srv, path);  lab skip_listing;
     jump skip_dir_check  ~ Str::Diff(req_type, "CheckDir"); ProcessCheckDir(srv, path); lab skip_dir_check;
-    jump skip_dump_core  ~ Str::Diff(req_type, "DumpCore"); dump_heap("core");          lab skip_dump_core;
+
+    jump skip_dump_core  ~ Str::Diff(req_type, "DumpCore");
+        put GlobalFlagNeedDumpCore().0 = Bool::TRUE;
+    lab skip_dump_core;
 
     jump done;
 
@@ -306,6 +315,11 @@ fn serve(srv)
 
         Http::VoidReq(srv.Server::REQ);
         Net::Close(srv.Server::CONN);
+
+        jump skip_dump_core ~ Bool::Not(GlobalFlagNeedDumpCore().0);
+            dump_heap("core");
+        lab skip_dump_core;
+        put GlobalFlagNeedDumpCore().0 = Bool::FALSE;
     jump loop;
 
     lab route_get;
