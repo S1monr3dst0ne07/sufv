@@ -78,7 +78,7 @@ fn SendFileDirect(srv, path)
 
     static (Config::FILE_CHUNK >> 3) ~ buffer;
     
-    put fd = FS::Sys::Open(path, FS::ENUM::MODE::RDONLY);
+    put fd = FS::Sys::Open(path, FS::Mode::RDONLY);
     
     lab loop;
         put bytes_read = syscall(
@@ -109,7 +109,7 @@ fn SendFileStream(srv, path)
     put fd = syscall(
         SYSCALL::OPEN,
         FS::ConvertPath(path),
-        FS::ENUM::MODE::RDONLY, // read only!
+        FS::Mode::RDONLY, // read only!
         0,
     );
     jump file_not_found ~ Sys::Error(fd);
@@ -261,6 +261,7 @@ fn ProcessRequest(srv, path)
 
     jump skip_listing    ~ Str::Diff(req_type, "Listing");  ProcessListing(srv, path);  lab skip_listing;
     jump skip_dir_check  ~ Str::Diff(req_type, "CheckDir"); ProcessCheckDir(srv, path); lab skip_dir_check;
+    jump skip_dump_core  ~ Str::Diff(req_type, "DumpCore"); dump_heap("core");          lab skip_dump_core;
 
     jump done;
 
