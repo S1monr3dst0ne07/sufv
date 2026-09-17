@@ -1,0 +1,13 @@
+[Unit]
+Description=Sufv Webserver
+Wants=network.target
+
+[Service]
+WorkingDirectory=/opt/sufv/
+ExecStart=/opt/sufv/build
+Restart=always
+RestartSec=1s
+MemoryMax=100M
+
+[Install]
+WantedBy=multi-user.target
