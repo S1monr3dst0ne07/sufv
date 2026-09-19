@@ -98,6 +98,8 @@ fn SendFileDirect(srv, path)
         );
         jump loop;
     lab done;
+
+    FS::Sys::Close(fd);
 }
 
 
@@ -159,6 +161,7 @@ fn SendFileStream(srv, path)
         bytes_read,
     );
     HT::Void(resp_header);
+    FS::Sys::Close(fd);
 
 lab file_not_found;
 }
