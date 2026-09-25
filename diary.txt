@@ -1,0 +1,5 @@
+#1 12/09/2026 SendFileDirect loops of file doesn't exist.
+#2 17/09/2026 implemented uapi binding in yascl, constants needed fixing
+#3 19/09/2026 FDs were being leaked all over the place *face-palm* was easy to debug and fix tho
+#4 25/09/2026 fixed Net::Close shutdown syscall errors
+#5 25/09/2026 implemented read timeout for requests because chrome keep multiple connections open at once (why????)
