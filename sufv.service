@@ -4,7 +4,7 @@ Wants=network.target
 
 [Service]
 WorkingDirectory=/opt/sufv/
-ExecStart=/opt/sufv/build
+ExecStart=/opt/sufv/sufv
 Restart=always
 RestartSec=1s
 MemoryMax=100M
