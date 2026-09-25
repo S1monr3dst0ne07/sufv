@@ -3,3 +3,4 @@ build.asm
 compiler
 lib/*
 prefix.txt
+*.tar
