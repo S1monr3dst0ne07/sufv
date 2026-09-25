@@ -288,7 +288,7 @@ fn main()
 {
     put addr = Net::ParseAddr("0.0.0.0");
     put port = Net::HostToNetShort(5000);
-    put socket = Net::Server::Init(addr, port, 10);
+    put socket = Net::Server::Init(addr, port, 1);
 
     put srv = Chunk::New(Server);
     put srv.Server::SOCKET = socket;
@@ -300,11 +300,32 @@ fn main()
     serve(srv);
 }
 
+fn set_conn_time(srv)
+{
+    static Time::Val ~ tv;
+    put tv.Time::Val::SEC = 0;
+    put tv.Time::Val::USEC = 500000;
+
+    Sys::TryCall(
+        "set_conn_timeout",
+        SYSCALL::SETSOCKOPT,
+        srv.Server::CONN,
+        Net::SockOptionLevel::SOCKET,
+        Net::SockOption::RCVTIMEO,
+        tv,
+        0 : Time::Val,
+    );
+}
+
+
 fn serve(srv)
 {
     lab loop;
         put srv.Server::CONN = Net::Server::Accept(srv.Server::SOCKET);
+        set_conn_time(srv);
         put req = Http::Recv(srv.Server::CONN);
+        jump no_req ~ req == Mem::NULL;
+
         put srv.Server::REQ = req;
 
         put path_suffix = Http::Unescape(req.Http::Request::PATH);
@@ -317,6 +338,7 @@ fn serve(srv)
     lab continue;
 
         Http::VoidReq(srv.Server::REQ);
+    lab no_req;
         Net::Close(srv.Server::CONN);
 
         jump skip_dump_core ~ Bool::Not(GlobalFlagNeedDumpCore().0);
