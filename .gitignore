@@ -1,6 +1,6 @@
 sufv
 build.asm
 compiler
-lib/*
+lib
 prefix.txt
 *.tar

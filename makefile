@@ -2,7 +2,7 @@
 
 
 run: compile
-	./build
+	./sufv
 
 bundle: compile
 	tar -cf release.tar sufv sufv.service index.html
