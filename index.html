@@ -137,6 +137,16 @@ function get_dir_check(path) {
 }
 
 
+function client_log(msg) {
+    content = `"${msg}" [${navigator.userAgent}]`
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "", false);
+    xhr.setRequestHeader("Action", "ClientLog");
+    xhr.setRequestHeader("Message", content);
+    try { xhr.send(null); }
+    catch {}
+}
+
 function build_dir_entry(path, name_str, level) {
     var container = document.createElement("div");
     var body = document.createElement('div');
@@ -330,32 +340,58 @@ function run_file_view() {
             let lastTime = 0;
             let counter = 0;
             video = content;
-            console.log(video);
 
+            let timecode = 0;
+
+            let recovering = false;
             recover = async () => {
-                video.src = video.src;
-                video.currentTime = lastTime;
-                await video.play();
+                if (recovering) return;
+                recovering = true;
+
+                while (recovering)
+                {
+                    console.log("recovering...");
+
+                    try {
+                        video.src = video.src;
+                        video.currentTime = timecode;
+                        await video.play();
+                    } catch(e) {
+                        msg = `video recovery failed: ${e}`
+                        console.log(msg);
+                        client_log(msg);
+                    } finally {
+                        recovering = false;
+                    }
+                }
             };
 
-            setInterval(async () => {
-                if (video.currentTime === lastTime && !video.paused)
-                    counter++
-                else counter = 0;
+            video.addEventListener("error", recover);
+            video.addEventListener("stalled", recover);
+            video.addEventListener("emptied", recover);
+            video.addEventListener("waiting", () => {
+                setTimeout(async () => {
+                    if (!video.paused && video.readyState < HTMLMediaElement.HAVE_FUTURE_DATA)
+                        await recover();
+                }, 5000);
+            });
 
-                if (video.error)
-                {
-                    console.log("video error: ", video.error);
-                    await recover();
-                }
-                else if (counter >= 10) {
-                    console.log("video froze");
-                    await recover();
-                }
-                else 
-                    lastTime = video.currentTime;
+            video.addEventListener("timeupdate", () => {
+                now = video.currentTime;
+                if (Number.isFinite(now))
+                    // last good timecode in case of recovery
+                    timecode = now;
+            });
 
-            }, 500);
+            let lastProgress = Date.now();
+            video.addEventListener("progress", () => {
+                lastProgress = Date.now();
+            });
+            setInterval(() => {
+                console.log(Date.now() - lastProgress);
+                if (!video.paused && (Date.now() - lastProgress) > 10000)
+                    recover();
+            }, 5000);
             break;
         
         case 'txt':
@@ -443,6 +479,8 @@ function run_file_view() {
 
     view.appendChild(content);
 }
+
+client_log("hello from the dark size of the moon")
 
 if (get_dir_check(base_path))
 {

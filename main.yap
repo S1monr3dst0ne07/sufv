@@ -271,6 +271,11 @@ fn ProcessRequest(srv, path)
     jump skip_listing    ~ Str::Diff(req_type, "Listing");  ProcessListing(srv, path);  lab skip_listing;
     jump skip_dir_check  ~ Str::Diff(req_type, "CheckDir"); ProcessCheckDir(srv, path); lab skip_dir_check;
 
+    jump skip_client_log ~ Str::Diff(req_type, "ClientLog");
+    jump skip_client_log ~ Bool::Not(HT::Has(table, "Message"));
+        print("[Client Log] %s\n", [HT::Get(table, "Message")]);
+    lab skip_client_log;
+
     jump skip_dump_core  ~ Str::Diff(req_type, "DumpCore");
         put GlobalFlagNeedDumpCore().0 = Bool::TRUE;
     lab skip_dump_core;
