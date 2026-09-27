@@ -326,6 +326,36 @@ function run_file_view() {
             content.controls = true;
             content.src = file_path;
             content.height = window.innerHeight * 0.8;
+
+            let lastTime = 0;
+            let counter = 0;
+            video = content;
+            console.log(video);
+
+            recover = async () => {
+                video.src = video.src;
+                video.currentTime = lastTime;
+                await video.play();
+            };
+
+            setInterval(async () => {
+                if (video.currentTime === lastTime && !video.paused)
+                    counter++
+                else counter = 0;
+
+                if (video.error)
+                {
+                    console.log("video error: ", video.error);
+                    await recover();
+                }
+                else if (counter >= 10) {
+                    console.log("video froze");
+                    await recover();
+                }
+                else 
+                    lastTime = video.currentTime;
+
+            }, 500);
             break;
         
         case 'txt':
