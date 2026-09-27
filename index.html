@@ -382,16 +382,6 @@ function run_file_view() {
                     // last good timecode in case of recovery
                     timecode = now;
             });
-
-            let lastProgress = Date.now();
-            video.addEventListener("progress", () => {
-                lastProgress = Date.now();
-            });
-            setInterval(() => {
-                console.log(Date.now() - lastProgress);
-                if (!video.paused && (Date.now() - lastProgress) > 10000)
-                    recover();
-            }, 5000);
             break;
         
         case 'txt':
