@@ -139,6 +139,9 @@ function get_dir_check(path) {
 
 function client_log(msg) {
     content = `"${msg}" [${navigator.userAgent}]`
+
+    console.log(content)
+
     var xhr = new XMLHttpRequest();
     xhr.open("POST", "", false);
     xhr.setRequestHeader("Action", "ClientLog");
@@ -350,7 +353,7 @@ function run_file_view() {
 
                 while (recovering)
                 {
-                    console.log("recovering...");
+                    client_log("recovering...");
 
                     try {
                         video.src = video.src;
@@ -359,9 +362,7 @@ function run_file_view() {
 
                         recovering = false;
                     } catch(e) {
-                        msg = `video recovery failed: ${e}`
-                        console.log(msg);
-                        client_log(msg);
+                        client_log(`video recovery failed: ${e}`);
                     }
                 }
             };
@@ -472,7 +473,7 @@ function run_file_view() {
     view.appendChild(content);
 }
 
-client_log("hello from the dark size of the moon")
+client_log("index startup")
 
 if (get_dir_check(base_path))
 {
