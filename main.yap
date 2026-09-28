@@ -9,6 +9,8 @@ seq Server
     CONN,   // current connection socket
     REQ,    // latest request
     PATH_PREFIX,
+
+    FILE_BUFFER,
 }
 
 fn RenderPath(srv, suffix)
@@ -41,7 +43,7 @@ fn SendIndexFrontend(srv)
 
 seq Config
 {
-    FILE_CHUNK = 1000000,
+    FILE_CHUNK = 10000000,
 }
 
 fn SendFile(srv, path)
@@ -76,8 +78,7 @@ fn SendFileDirect(srv, path)
     );
     HT::Void(header);
 
-    static (Config::FILE_CHUNK >> 3) ~ buffer;
-    
+    put buffer = srv.Server::FILE_BUFFER;
     put fd = FS::Sys::Open(path, FS::Mode::RDONLY);
     
     lab loop;
@@ -107,6 +108,7 @@ fn SendFileStream(srv, path)
 {
     put req = srv.Server::REQ;
     put req_header = req.Http::Request::PARAMS;
+    put buffer = srv.Server::FILE_BUFFER;
 
     put fd = syscall(
         SYSCALL::OPEN,
@@ -125,18 +127,13 @@ fn SendFileStream(srv, path)
 
     put offset = Str::ToInt(offset_string);
 
-    static Config::FILE_CHUNK ~ bchunk;
-    static Config::FILE_CHUNK ~ qchunk;
-
     syscall(SYSCALL::LSEEK, fd, offset, FS::Seek::Mode::SEEK_SET);
     put bytes_read = syscall(
         SYSCALL::READ,
         fd,
-        bchunk,
+        buffer,
         Config::FILE_CHUNK,
     );
-    Mem::FromBytes(qchunk, bchunk, bytes_read);
-
 
 
     put resp_header = HT::Create();
@@ -153,13 +150,17 @@ fn SendFileStream(srv, path)
     ]);  
     HT::Set(resp_header, "Content-Range", content_range_string);
 
-    Http::Send(
+    Http::SendHeader(
         srv.Server::CONN, 
         206, // partial content
         resp_header, 
-        qchunk,
+    );
+    Net::WriteBytes(
+        srv.Server::CONN,
+        buffer,
         bytes_read,
     );
+
     HT::Void(resp_header);
     FS::Sys::Close(fd);
 
@@ -297,6 +298,7 @@ fn main()
 
     put srv = Chunk::New(Server);
     put srv.Server::SOCKET = socket;
+    put srv.Server::FILE_BUFFER = Chunk::New(Config::FILE_CHUNK);
 
     //put srv.Server::PATH_PREFIX = "./root";
     put srv.Server::PATH_PREFIX = FS::Read("prefix.txt");
