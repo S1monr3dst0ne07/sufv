@@ -293,7 +293,7 @@ fn main()
 {
     put addr = Net::ParseAddr("0.0.0.0");
     put port = Net::HostToNetShort(5000);
-    put socket = Net::Server::Init(addr, port, 1);
+    put socket = Net::Server::Init(addr, port, 10);
 
     put srv = Chunk::New(Server);
     put srv.Server::SOCKET = socket;
