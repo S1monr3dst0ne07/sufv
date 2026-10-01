@@ -235,7 +235,7 @@ fn ProcessListing(srv, path)
         put i = i + 1;
         jump loop;
     lab done;
-    Dyn::Delete(listing_obj);
+    Dyn::Void(listing_obj);
 
     put header = HT::Create();
     HT::Set(header, "Content-Type", "text/plain");
@@ -248,7 +248,7 @@ fn ProcessListing(srv, path)
         Dyn::Size(listing_str),
     );
     HT::Void(header);
-    Dyn::Delete(listing_str);
+    Dyn::Void(listing_str);
 
 lab not_a_dir;
 }
