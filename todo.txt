@@ -1,0 +1,7 @@
+-refactor server
+    -remove `Server` object
+    -fix Process* names
+
+- fix `broken pipe` errors from clogging logs
+
+
