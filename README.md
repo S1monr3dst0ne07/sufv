@@ -1,7 +1,7 @@
 
 # SUFV (Simple User-friendly File Viewer)
 
-Sufv let you view and browser a directory from the browser.
+Sufv lets you view and browse a directory from the browser.
 It is intended to run on a server, which is already
 serving some kind of shared directory.
 
@@ -16,11 +16,11 @@ actual file, the frontend appends an ampersand to the path.
 Users can also do this to download files directly.
 
 The serve directory is configured by the `prefix.txt`
-file which contains the path prefixed, which the server
+file, which contains the path prefixed, which the server
 prepends to any file or directory requests.
 
 ### Warning
-This services does **NOT** implement any
+This service does **NOT** implement any
 safety or security features. It is intended
-for local / infra-net use only.
+for local / infranet use only.
 
