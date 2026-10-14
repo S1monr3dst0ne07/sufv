@@ -310,8 +310,8 @@ fn main()
 fn set_conn_time(srv)
 {
     static Time::Val ~ tv;
-    put tv.Time::Val::SEC = 0;
-    put tv.Time::Val::USEC = 500000;
+    put tv.Time::Val::SEC = 5;
+    put tv.Time::Val::USEC = 0;
 
     Sys::TryCall(
         "set_conn_timeout",
